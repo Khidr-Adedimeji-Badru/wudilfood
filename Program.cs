@@ -62,6 +62,10 @@ using(var scope=app.Services.CreateScope()){
      "IsActive" boolean NOT NULL DEFAULT TRUE,
      "CreatedUtc" timestamp with time zone NOT NULL
  );
+ ALTER TABLE "Riders" ADD COLUMN IF NOT EXISTS "Name" character varying(100) NOT NULL DEFAULT '';
+ ALTER TABLE "Riders" ADD COLUMN IF NOT EXISTS "PhoneNumber" character varying(30) NOT NULL DEFAULT '';
+ ALTER TABLE "Riders" ADD COLUMN IF NOT EXISTS "IsActive" boolean NOT NULL DEFAULT TRUE;
+ ALTER TABLE "Riders" ADD COLUMN IF NOT EXISTS "CreatedUtc" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP;
  ALTER TABLE "Orders" ADD COLUMN IF NOT EXISTS "RiderId" integer NULL;
  ALTER TABLE "Orders" DROP CONSTRAINT IF EXISTS "FK_Orders_AspNetUsers_RiderId";
  ALTER TABLE "Orders" DROP CONSTRAINT IF EXISTS "FK_Orders_Riders_RiderId";
