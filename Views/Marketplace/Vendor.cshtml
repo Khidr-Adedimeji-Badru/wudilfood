@@ -1,0 +1,59 @@
+@model Vendor
+@{
+    ViewData["Title"] = Model.Name;
+    var availableItems = Model.Items.Where(x => x.IsVisible && x.Stock > 0 && x.Mode != AvailabilityMode.Unavailable).ToList();
+}
+<section class="page-head">
+    <span class="eyebrow">LOCAL KITCHEN</span>
+    <h1>@Model.Name</h1>
+    <p>@Model.Description</p>
+    <p class="muted">@Model.Location · @Model.OperatingHours</p>
+</section>
+<div class="section-title">
+    <h2>On the menu</h2>
+    <span class="result-count">@availableItems.Count items</span>
+</div>
+<div class="grid">
+@foreach (var item in availableItems)
+{
+    <article class="food-card">
+        <div class="food-gallery">
+        @if (item.ImageUrls.Count > 0)
+        {
+            <div class="gallery-main"><img src="@item.ImageUrls[0]" alt="@item.Name"/></div>
+            @if (item.ImageUrls.Count > 1)
+            {
+                <div class="gallery-thumbs">
+                @foreach (var image in item.ImageUrls.Skip(1))
+                {
+                    <img src="@image" alt="@item.Name"/>
+                }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="food-photo"><span class="photo-placeholder">@item.Name.Substring(0,1).ToUpperInvariant()</span></div>
+        }
+        </div>
+        <div class="card-body">
+            <span class="tag">@item.Mode</span>
+            <h3>@item.Name</h3>
+            <p>@item.Description</p>
+            <div class="item-facts"><span>@item.PreparationMinutes min prep</span><span>@item.Stock left</span></div>
+            @foreach (var schedule in item.Schedules)
+            {
+                <p class="muted">@schedule.Day: @schedule.StartsAt–@schedule.EndsAt · order before @schedule.OrderDeadline</p>
+            }
+            <div class="card-foot">
+                <strong><small>NGN</small> @item.Price.ToString("N0")</strong>
+                <form asp-controller="Cart" asp-action="Add" method="post">
+                    <input type="hidden" name="id" value="@item.Id"/>
+                    <button class="small-button">Add to cart</button>
+                </form>
+            </div>
+        </div>
+    </article>
+}
+</div>
+

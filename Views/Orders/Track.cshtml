@@ -1,0 +1,3 @@
+@{ViewData["Title"]="Track guest order";}
+<div class="auth"><span class="eyebrow">GUEST ORDER</span><h1>Track your order</h1><p>Enter the reference from your confirmation and the phone number used at checkout.</p><form asp-action="Track" method="post" class="panel stack"><div asp-validation-summary="All" class="error"></div><label>Order reference<input name="reference" required autocomplete="off" placeholder="WF-XXXXXXXXXXXX"/></label><label>Phone number<input name="phone" required autocomplete="tel"/></label><button class="button">Find order</button></form></div>
+

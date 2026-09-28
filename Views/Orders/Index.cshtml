@@ -1,0 +1,3 @@
+@model List<FoodOrder>
+@{ViewData["Title"]="Orders";}
+<div class="page-head"><span class="eyebrow">ACTIVITY</span><h1>Orders</h1><p>Track every step from kitchen to collection.</p></div><div class="panel">@foreach(var o in Model){<a class="row row-link" asp-action="Details" asp-route-id="@o.Id"><div><strong>@o.Reference</strong><p class="muted">@o.Vendor.Name · @o.CreatedUtc.ToString("dd MMM yyyy")</p></div><div><span class="pill">@o.State</span><strong>₦@o.Total.ToString("N0")</strong></div></a>}@if(Model.Count==0){<div class="empty">No orders yet.</div>}</div>
