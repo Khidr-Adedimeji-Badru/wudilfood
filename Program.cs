@@ -5,7 +5,9 @@ using WudilFood.Models;
 
 var builder=WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
-builder.Services.AddDbContext<AppDb>(o=>o.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Configure ConnectionStrings:DefaultConnection")));
+var connectionString=builder.Configuration.GetConnectionString("DefaultConnection");
+if(string.IsNullOrWhiteSpace(connectionString))throw new InvalidOperationException("Configure ConnectionStrings:DefaultConnection");
+builder.Services.AddDbContext<AppDb>(o=>o.UseNpgsql(connectionString));
 builder.Services.AddIdentity<AppUser,IdentityRole>(o=>{o.Password.RequiredLength=10;o.User.RequireUniqueEmail=true;}).AddEntityFrameworkStores<AppDb>().AddDefaultTokenProviders();
 builder.Services.ConfigureApplicationCookie(o=>{o.LoginPath="/Account/Login";o.AccessDeniedPath="/Account/Denied";o.Cookie.HttpOnly=true;o.Cookie.SecurePolicy=CookieSecurePolicy.SameAsRequest;});
 builder.Services.AddDistributedMemoryCache();
