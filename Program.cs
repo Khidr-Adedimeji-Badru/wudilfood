@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WudilFood.Data;
 using WudilFood.Models;
+using WudilFood.Services;
 
 var builder=WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
@@ -9,6 +10,7 @@ var connectionString=builder.Configuration.GetConnectionString("DefaultConnectio
 if(string.IsNullOrWhiteSpace(connectionString))throw new InvalidOperationException("Configure ConnectionStrings:DefaultConnection");
 builder.Services.AddDbContext<AppDb>(o=>o.UseNpgsql(connectionString));
 builder.Services.AddIdentity<AppUser,IdentityRole>(o=>{o.Password.RequiredLength=10;o.User.RequireUniqueEmail=true;}).AddEntityFrameworkStores<AppDb>().AddDefaultTokenProviders();
+builder.Services.AddTransient<IPasswordResetEmailSender,PasswordResetEmailSender>();
 builder.Services.ConfigureApplicationCookie(o=>{o.LoginPath="/Account/Login";o.AccessDeniedPath="/Account/Denied";o.Cookie.HttpOnly=true;o.Cookie.SecurePolicy=CookieSecurePolicy.SameAsRequest;});
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(o=>{o.Cookie.HttpOnly=true;o.Cookie.IsEssential=true;});
@@ -68,6 +70,20 @@ using(var scope=app.Services.CreateScope()){
  ALTER TABLE "Riders" ADD COLUMN IF NOT EXISTS "PhoneNumber" character varying(30) NOT NULL DEFAULT '';
  ALTER TABLE "Riders" ADD COLUMN IF NOT EXISTS "IsActive" boolean NOT NULL DEFAULT TRUE;
  ALTER TABLE "Riders" ADD COLUMN IF NOT EXISTS "CreatedUtc" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ DO $$ BEGIN
+   IF EXISTS (
+     SELECT 1 FROM information_schema.columns
+     WHERE table_schema = current_schema() AND table_name = 'Riders' AND column_name = 'UserId'
+   ) THEN
+     ALTER TABLE "Riders" ALTER COLUMN "UserId" DROP NOT NULL;
+   END IF;
+   IF EXISTS (
+     SELECT 1 FROM information_schema.columns
+     WHERE table_schema = current_schema() AND table_name = 'Riders' AND column_name = 'Status'
+   ) THEN
+     ALTER TABLE "Riders" ALTER COLUMN "Status" DROP NOT NULL;
+   END IF;
+ END $$;
  ALTER TABLE "Orders" ADD COLUMN IF NOT EXISTS "RiderId" integer NULL;
  ALTER TABLE "Orders" DROP CONSTRAINT IF EXISTS "FK_Orders_AspNetUsers_RiderId";
  ALTER TABLE "Orders" DROP CONSTRAINT IF EXISTS "FK_Orders_Riders_RiderId";
@@ -92,6 +108,16 @@ using(var scope=app.Services.CreateScope()){
  foreach(var role in new[]{Roles.Customer,Roles.Vendor,Roles.Admin})if(!await roles.RoleExistsAsync(role))await roles.CreateAsync(new IdentityRole(role));
  if(!await db.Settings.AnyAsync())db.Settings.Add(new PlatformSetting());
  if(!await db.Categories.AnyAsync())db.Categories.AddRange(new[]{"Meals","Snacks","Drinks","Desserts"}.Select(x=>new Category{Name=x}));
+ await db.Riders.Where(x=>x.Name==""||x.PhoneNumber=="").ExecuteUpdateAsync(x=>x.SetProperty(r=>r.IsActive,false));
+ var seededRiders=new[]{
+  new Rider{Name="Musa Ibrahim",PhoneNumber="08030001001"},
+  new Rider{Name="Auwal Bello",PhoneNumber="08030001002"},
+  new Rider{Name="Sani Abdullahi",PhoneNumber="08030001003"},
+  new Rider{Name="Bashir Garba",PhoneNumber="08030001004"},
+  new Rider{Name="Kabiru Usman",PhoneNumber="08030001005"}
+ };
+ var riderPhones=await db.Riders.Select(x=>x.PhoneNumber).ToListAsync();
+ db.Riders.AddRange(seededRiders.Where(x=>!riderPhones.Contains(x.PhoneNumber)));
  await db.SaveChangesAsync();
  var adminEmail=app.Configuration["BootstrapAdmin:Email"];var adminPassword=app.Configuration["BootstrapAdmin:Password"];
  if(!string.IsNullOrWhiteSpace(adminEmail)&&!string.IsNullOrWhiteSpace(adminPassword)){
